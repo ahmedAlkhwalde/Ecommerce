@@ -50,9 +50,8 @@ Route::prefix('user')->middleware(['auth:sanctum', 'CheckUser'])->group(function
     Route::delete('/cart/items', [CartController::class, 'remove']);
     Route::delete('/cart/clear', [CartController::class, 'clear']);
 
-    Route::get('/orders', [OrderController::class, 'index']);
+    Route::get('/myorders', [OrderController::class, 'myorders']);
     Route::post('/orders', [OrderController::class, 'store']); 
-    Route::get('/orders/{id}', [OrderController::class, 'show']);
     Route::post('/orders/{id}/cancel', [OrderController::class, 'cancel']);
 
 
