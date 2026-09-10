@@ -17,21 +17,14 @@ class ProductController extends Controller
     public function index()
     {
         try {
-            $products = Product::all();
-            $p = $products->map(function ($product) {
-                return [
-                    'id'          => $product->id,
-                    'name'        => $product->name,
-                    'price'       => $product->price,
-                    'description' => $product->description,
-                    'stock'       => $product->stock,
-                    'image_url'   => $product->image ? asset($product->image) : null,
-                    'created_at'  => $product->created_at,
-                ];
+            $products = Product::with('category')->get();
+            $products->transform(function ($product) {
+                $product->image = $product->image ? asset($product->image) : null;
+                return $product;
             });
             return response()->json([
                 'message' => 'تم جلب جميع المنتجات بنجاح.',
-                'data'    => $p,
+                'data'    => $products,
             ], 200);
         } catch (Exception $e) {
             return response()->json([
@@ -64,7 +57,7 @@ class ProductController extends Controller
                 'message' => 'تم إنشاء المنتج بنجاح.',
                 'data'    => $product,
             ], 201);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return response()->json([
                 'message' => 'حدث خطأ أثناء إنشاء المنتج.',
                 'error' => $e->getMessage(),
@@ -86,16 +79,9 @@ class ProductController extends Controller
                 ], 404);
             }
 
-            $products = $category->products->map(function ($product) {
-                return [
-                    'id'          => $product->id,
-                    'name'        => $product->name,
-                    'price'       => $product->price,
-                    'description' => $product->description,
-                    'stock'       => $product->stock,
-                    'image_url'   => $product->image ? asset($product->image) : null,
-                    'created_at'  => $product->created_at,
-                ];
+            $products = $category->products->load('category')->map(function ($product) {
+                $product->image = $product->image ? asset($product->image) : null;
+                return $product;
             });
 
             if ($products->isEmpty()) {
@@ -109,7 +95,7 @@ class ProductController extends Controller
                 'message' => 'تم جلب المنتجات بنجاح.',
                 'data'    => $products,
             ], 200);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return response()->json([
                 'message' => 'حدث خطأ أثناء جلب المنتجات.',
                 'error'   => $e->getMessage(),

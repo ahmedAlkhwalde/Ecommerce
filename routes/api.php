@@ -34,3 +34,14 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'CheckAdmin'])->group(functi
 
 
 });
+
+
+
+
+Route::prefix('user')->group(function () {
+    Route::get('/category', [CategoryController::class, 'index']);
+
+    Route::get('/products', [ProductController::class, 'index']);
+    Route::get('/products/{id}', [ProductController::class, 'show']);
+});
+
