@@ -6,6 +6,7 @@ use App\Http\Requests\loginRequest;
 use App\Http\Requests\UserRequest;
 use App\Http\Requests\VerifyOtpRequest;
 use App\Mail\maileVerified;
+use App\Mail\mailPasswordReset;
 use App\Models\User;
 use Exception;
 use Illuminate\Http\Request;
@@ -184,6 +185,49 @@ class UserController extends Controller
             'User' => $user,
             'access_token' => $token,
         ]);
+    }
+
+    public function forgetpassword(Request $request) {
+        $request->validate([
+            'email' => 'required|email|exists:users,email',
+        ]);
+
+        $user = User::where('email', $request->email)->first();
+
+        $code = rand(100000, 999999);
+        Cache::put('password_reset_code_' . $user->email, $code, now()->addMinutes(10));
+        Mail::to($user->email)->send(new mailPasswordReset($user->name, $code));
+
+        return response()->json([
+            'message' => 'تم إرسال رمز إعادة تعيين كلمة المرور إلى بريدك الإلكتروني.'
+        ], 200);
+    }
+
+
+    public function resetpassword(Request $request) {
+        $request->validate([
+            'email' => 'required|email|exists:users,email',
+            'code' => 'required|digits:6',
+            'new_password' => 'required|string|min:8|confirmed',
+        ]);
+
+        $cachedCode = Cache::get('password_reset_code_' . $request->email);
+
+        if (!$cachedCode || $cachedCode != $request->code) {
+            return response()->json([
+                'message' => 'رمز إعادة تعيين كلمة المرور غير صحيح أو انتهت صلاحيته (تكون الصلاحية 10 دقائق).'
+            ], 400);
+        }
+
+        $user = User::where('email', $request->email)->first();
+        $user->password = bcrypt($request->new_password);
+        $user->save();
+
+        Cache::forget('password_reset_code_' . $request->email);
+
+        return response()->json([
+            'message' => 'تم إعادة تعيين كلمة المرور بنجاح! يمكنك الآن تسجيل الدخول بكلمة المرور الجديدة.'
+        ], 200);
     }
 
 

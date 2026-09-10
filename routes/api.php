@@ -17,6 +17,8 @@ Route::post('/register', [UserController::class, 'register']);
 Route::post('/verify-otp', [UserController::class, 'verifyOtp']);
 Route::post('/resend-otp', [UserController::class, 'resendOtp']);
 Route::post('/login', [UserController::class, 'login']);
+Route::post('/forgetpassword', [UserController::class, 'forgetpassword']);
+Route::post('/resetpassword', [UserController::class, 'resetpassword']);
 Route::post('/logout', [UserController::class, 'logout'])->middleware('auth:sanctum');
 
 Route::prefix('admin')->middleware(['auth:sanctum', 'CheckAdmin'])->group(function () {

@@ -45,7 +45,7 @@ class OrderController extends Controller
 
         try {
             $request->validate([
-                'status' => 'required|in:completed,processing,canceled',
+                'status' => 'required|in:completed,processing,cancelled',
             ]);
             $order = Order::find($id);
             if (!$order) {

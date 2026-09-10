@@ -7,6 +7,8 @@ use App\Http\Requests\UpdateProductRequest;
 use App\Models\Category;
 use App\Models\Product;
 use Exception;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Facades\File;
 use Illuminate\Http\Request;
 
 class ProductController extends Controller
@@ -106,36 +108,39 @@ class ProductController extends Controller
     /**
      * Update the specified resource in storage.
      */
+   
+
     public function update(UpdateProductRequest $request, string $id)
     {
         try {
-            $valedateData = $request->validated();
+            $validatedData = $request->validated();
+            $product = Product::findOrFail($id);
+
             if ($request->hasFile('image')) {
+                if ($product->image && File::exists(public_path($product->image))) {
+                    File::delete(public_path($product->image));
+                }
+
                 $image = $request->file('image');
                 $imageName = time() . '_' . $image->getClientOriginalName();
                 $image->move(public_path('images'), $imageName);
-                $valedateData['image'] = 'images/' . $imageName;
+                $validatedData['image'] = 'images/' . $imageName;
             }
-            $product = Product::findorfail($id);
-            if (!$product) {
-                return response()->json([
-                    'message' => 'المنتج غير موجود.',
-                ], 404);
-            }
-            $product->update($valedateData);
-            if (!$product) {
-                return response()->json([
-                    'message' => 'حدث خطأ أثناء تحديث المنتج.',
-                ], 500);
-            }
+
+            $product->update($validatedData);
+
             return response()->json([
                 'message' => 'تم تحديث المنتج بنجاح.',
-                'data'    => $product,
+                'data'    => $product->fresh(),
             ], 200);
-        } catch (\Exception $e) {
+        } catch (ModelNotFoundException $e) {
+            return response()->json([
+                'message' => 'المنتج غير موجود.',
+            ], 404);
+        } catch (Exception $e) {
             return response()->json([
                 'message' => 'حدث خطأ أثناء تحديث المنتج.',
-                'error' => $e->getMessage(),
+                'error'   => $e->getMessage(),
             ], 500);
         }
     }
