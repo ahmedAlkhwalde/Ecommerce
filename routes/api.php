@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\CartController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProductController;
@@ -43,6 +44,19 @@ Route::prefix('user')->middleware(['auth:sanctum', 'CheckUser'])->group(function
     Route::post('/profile', [ProfileController::class, 'store']);
 
     
+    Route::get('/cart', [CartController::class, 'index']);
+    Route::post('/cart/add', [CartController::class, 'add']);
+    Route::put('/cart/items/{id}', [CartController::class, 'updateQuantity']);
+    Route::delete('/cart/items/{id}', [CartController::class, 'remove']);
+    Route::delete('/cart/clear', [CartController::class, 'clear']);
+
+    // 3. الطلبات (Orders)
+    Route::get('/orders', [OrderController::class, 'index']);          // طلبات المستخدم السابقة
+    Route::post('/orders', [OrderController::class, 'store']);         // إنشاء طلب جديد (Checkout)
+    Route::get('/orders/{id}', [OrderController::class, 'show']);       // تفاصيل طلب معين
+    Route::post('/orders/{id}/cancel', [OrderController::class, 'cancel']);
+
+
 });
 
 
