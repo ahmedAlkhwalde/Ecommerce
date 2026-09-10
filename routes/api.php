@@ -37,6 +37,15 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'CheckAdmin'])->group(functi
 
 
 
+Route::prefix('user')->middleware(['auth:sanctum', 'CheckUser'])->group(function () {
+    
+    Route::get('/profile', [ProfileController::class, 'index']);
+    Route::post('/profile', [ProfileController::class, 'store']);
+
+    
+});
+
+
 
 Route::prefix('user')->group(function () {
     Route::get('/category', [CategoryController::class, 'index']);
