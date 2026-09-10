@@ -46,14 +46,13 @@ Route::prefix('user')->middleware(['auth:sanctum', 'CheckUser'])->group(function
     
     Route::get('/cart', [CartController::class, 'index']);
     Route::post('/cart/add', [CartController::class, 'add']);
-    Route::put('/cart/items/{id}', [CartController::class, 'updateQuantity']);
-    Route::delete('/cart/items/{id}', [CartController::class, 'remove']);
+    Route::put('/cart/items', [CartController::class, 'updateQuantity']);
+    Route::delete('/cart/items', [CartController::class, 'remove']);
     Route::delete('/cart/clear', [CartController::class, 'clear']);
 
-    // 3. الطلبات (Orders)
-    Route::get('/orders', [OrderController::class, 'index']);          // طلبات المستخدم السابقة
-    Route::post('/orders', [OrderController::class, 'store']);         // إنشاء طلب جديد (Checkout)
-    Route::get('/orders/{id}', [OrderController::class, 'show']);       // تفاصيل طلب معين
+    Route::get('/orders', [OrderController::class, 'index']);
+    Route::post('/orders', [OrderController::class, 'store']); 
+    Route::get('/orders/{id}', [OrderController::class, 'show']);
     Route::post('/orders/{id}/cancel', [OrderController::class, 'cancel']);
 
 
