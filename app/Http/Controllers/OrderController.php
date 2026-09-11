@@ -164,29 +164,43 @@ class OrderController extends Controller
     public function cancel($id)
     {
         try {
-            $user = Auth::user()->id;
-            $order = Order::where('user_id', $user)->find($id);
+            $userId = Auth::id();
+
+            $order = Order::with('products')->where('user_id', $userId)->find($id);
+
             if (!$order) {
                 return response()->json([
                     'message' => 'الطلب غير موجود.',
                 ], 404);
             }
+
             if ($order->status === 'cancelled') {
                 return response()->json([
                     'message' => 'الطلب ملغى بالفعل.',
                 ], 400);
-            } else if ($order->status === 'completed' || $order->status === 'processing') {
+            }
+
+            if (in_array($order->status, ['completed', 'processing'])) {
                 return response()->json([
                     'message' => 'لا يمكن إلغاء الطلب لأنه في حالة ' . $order->status . '.',
                 ], 400);
             }
-            $order->status = 'cancelled';
-            $order->save();
+
+            DB::transaction(function () use ($order) {
+                foreach ($order->products as $product) {
+                    $quantity = (int)$product->pivot->quantity;
+                    $product->increment('stock', $quantity);
+                }
+
+                $order->status = 'cancelled';
+                $order->save();
+            });
+
             return response()->json([
-                'message' => 'تم إلغاء الطلب بنجاح.',
-                'data'    => $order,
+                'message' => 'تم إلغاء الطلب وإعادة الكميات للمخزون بنجاح.',
+                'data'    => $order->fresh(['products']),
             ], 200);
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             return response()->json([
                 'message' => 'حدث خطأ أثناء إلغاء الطلب.',
                 'error'   => $e->getMessage(),
