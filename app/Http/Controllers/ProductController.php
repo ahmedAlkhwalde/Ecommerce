@@ -11,6 +11,7 @@ use Exception;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\File;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class ProductController extends Controller
 {
@@ -21,16 +22,22 @@ class ProductController extends Controller
     public function index()
     {
         try {
-            $products = Product::with('category')->paginate(10);
-            $products->transform(function ($product) {
-                $product->image = $product->image ? asset($product->image) : null;
+            // 1. تحميل التصنيف ومعرض الصور مسبقاً
+            $products = Product::with(['category', 'images'])->paginate(10);
+
+            $products->getCollection()->transform(function ($product) {
+                $product->images->transform(function ($image) {
+                    $image->url = asset($image->url);
+                    return $image;
+                });
                 return $product;
             });
+
             return response()->json([
                 'message' => 'تم جلب المنتجات بنجاح.',
                 'data'    => $products,
             ], 200);
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             return response()->json([
                 'message' => 'حدث خطأ أثناء جلب المنتجات.',
                 'error'   => $e->getMessage(),
@@ -45,21 +52,24 @@ class ProductController extends Controller
     {
         try {
             $valedateData = $request->validated();
-            $imagepath = $this->uploadImage($request, 'image', 'images');
-            if ($imagepath) {
-                $valedateData['image'] = $imagepath;
-            }
             $product = Product::create($valedateData);
             if (!$product) {
                 return response()->json([
                     'message' => 'حدث خطأ أثناء إنشاء المنتج.',
                 ], 500);
             }
+            $imagePath = $this->uploadImage($request, $product, 'images', 'image', 'images/products');
             return response()->json([
                 'message' => 'تم إنشاء المنتج بنجاح.',
-                'data'    => $product,
+                'data'    => $product->load('images'),
+                'image_path' => $imagePath,
             ], 201);
         } catch (Exception $e) {
+            Log::error('فشلت عملية إنشاء المنتج', [
+                'error'    => $e->getMessage(),
+                'file'     => $e->getFile(),
+                'line'     => $e->getLine(),
+            ]);
             return response()->json([
                 'message' => 'حدث خطأ أثناء إنشاء المنتج.',
                 'error' => $e->getMessage(),
@@ -81,25 +91,28 @@ class ProductController extends Controller
                 ], 404);
             }
 
-            $products = $category->products()->with('category')->paginate(10);
+            // 1. تحميل التصنيف وعلاقة الصور مسبقاً (سواء كانت images أو image)
+            $products = $category->products()->with(['category', 'images'])->paginate(10);
 
+            // 2. تعديل روابط الصور داخل مجموعة البيانات بدون كسر الهيكل
             $products->getCollection()->transform(function ($product) {
-                $product->image = $product->image ? asset($product->image) : null;
+                if ($product->relationLoaded('images')) {
+                    $product->images->transform(function ($img) {
+                        $img->url = asset($img->url);
+                        return $img;
+                    });
+                } elseif ($product->relationLoaded('image') && $product->image) {
+                    $product->image->url = asset($product->image->url);
+                }
                 return $product;
             });
 
-            if ($products->isEmpty()) {
-                return response()->json([
-                    'message' => 'لا توجد منتجات لهذا التصنيف.',
-                    'data'    => [],
-                ], 200);
-            }
-
+            // 3. إرجاع النتيجة مباشرة (Paginator يرجع دائمًا هيكل منظم حتى لو كان فارغاً)
             return response()->json([
-                'message' => 'تم جلب المنتجات بنجاح.',
+                'message' => $products->isEmpty() ? 'لا توجد منتجات لهذا التصنيف.' : 'تم جلب المنتجات بنجاح.',
                 'data'    => $products,
             ], 200);
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             return response()->json([
                 'message' => 'حدث خطأ أثناء جلب المنتجات.',
                 'error'   => $e->getMessage(),
@@ -119,10 +132,7 @@ class ProductController extends Controller
             $product = Product::findOrFail($id);
 
             if ($request->hasFile('image')) {
-                $imagepath = $this->uploadImage($request, 'image', 'images');
-                if ($imagepath) {
-                    $validatedData['image'] = $imagepath;
-                }
+                $imagepath = $this->uploadImage($request, $product, 'images', 'image', 'images/products');
             }
 
             $product->update($validatedData);
@@ -149,7 +159,7 @@ class ProductController extends Controller
     public function destroy(string $id)
     {
         try {
-            $product = Product::findorfail($id);
+            $product = Product::find($id);
             if (!$product) {
                 return response()->json([
                     'message' => 'المنتج غير موجود.',

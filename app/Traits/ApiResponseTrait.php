@@ -26,11 +26,6 @@ trait ApiResponseTrait
 
     public function ExceptionResponse($message = 'Error',$error = null, $code = 500)
     {
-        Log::error('فشلت عملية خصم المخزون', [
-                'error'    => $e->getMessage(),
-                'file'     => $e->getFile(),
-                'line'     => $e->getLine(),
-            ]);
         return response()->json([
             'status'  => false,
             'message' => $message,
