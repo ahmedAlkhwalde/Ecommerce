@@ -8,6 +8,7 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Traits\ApiResponseTrait;
+use Illuminate\Support\Facades\Log;
 
 class CartController extends Controller
 {
@@ -22,6 +23,11 @@ class CartController extends Controller
             }
             return $this->successResponse('تم جلب السلة بنجاح.', $cart, 200);
         } catch (Exception $e) {
+            Log::error('فشلت عملية خصم المخزون', [
+                'error'    => $e->getMessage(),
+                'file'     => $e->getFile(),
+                'line'     => $e->getLine(),
+            ]);
             return $this->ExceptionResponse('حدث خطأ أثناء جلب السلة.', $e->getMessage(), 500);
         }
     }
@@ -62,8 +68,13 @@ class CartController extends Controller
                 ]);
             }
 
-            return $this->successResponse('تمت إضافة المنتج إلى السلة بنجاح.',$cart->load('products'), 200);
+            return $this->successResponse('تمت إضافة المنتج إلى السلة بنجاح.', $cart->load('products'), 200);
         } catch (Exception $e) {
+            Log::error('فشلت عملية خصم المخزون', [
+                'error'    => $e->getMessage(),
+                'file'     => $e->getFile(),
+                'line'     => $e->getLine(),
+            ]);
             return $this->ExceptionResponse('حدث خطأ أثناء إضافة المنتج إلى السلة.', $e->getMessage(), 500);
         }
     }
@@ -103,7 +114,12 @@ class CartController extends Controller
             ]);
 
             return $this->successResponse('تم تحديث كمية المنتج في السلة بنجاح.', $cart->load('products'), 200);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
+            Log::error('فشلت عملية خصم المخزون', [
+                'error'    => $e->getMessage(),
+                'file'     => $e->getFile(),
+                'line'     => $e->getLine(),
+            ]);
             return $this->ExceptionResponse('حدث خطأ أثناء تحديث كمية المنتج في السلة.', $e->getMessage(), 500);
         }
     }
@@ -133,6 +149,11 @@ class CartController extends Controller
 
             return $this->successResponse('تمت إزالة المنتج من السلة بنجاح.', null, 200);
         } catch (\Exception $e) {
+            Log::error('فشلت عملية خصم المخزون', [
+                'error'    => $e->getMessage(),
+                'file'     => $e->getFile(),
+                'line'     => $e->getLine(),
+            ]);
             return $this->ExceptionResponse('حدث خطأ أثناء إزالة المنتج من السلة.', $e->getMessage(), 500);
         }
     }
@@ -152,6 +173,11 @@ class CartController extends Controller
 
             return $this->successResponse('تمت إزالة جميع المنتجات من السلة بنجاح.', null, 200);
         } catch (Exception $e) {
+            Log::error('فشلت عملية خصم المخزون', [
+                'error'    => $e->getMessage(),
+                'file'     => $e->getFile(),
+                'line'     => $e->getLine(),
+            ]);
             return $this->ExceptionResponse('حدث خطأ أثناء إزالة جميع المنتجات من السلة.', $e->getMessage(), 500);
         }
     }
