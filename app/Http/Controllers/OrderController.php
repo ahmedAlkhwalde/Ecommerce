@@ -7,6 +7,7 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class OrderController extends Controller
 {
@@ -145,7 +146,11 @@ class OrderController extends Controller
                 }
 
                 $cart->products()->detach();
-
+                Log::info('تم إنشاء الطلب بنجاح', [
+                    'user_id' => $user->id,
+                    'order_id' => $order->id,
+                    'total_price' => $totalPrice,
+                ]);
                 return response()->json([
                     'message' => 'تم إنشاء الطلب وتحديث المخزون بنجاح.',
                     'data'    => $order->load('products'),
@@ -196,6 +201,11 @@ class OrderController extends Controller
                 $order->save();
             });
 
+            Log::info('تم إلغاء الطلب وإعادة الكميات للمخزون بنجاح.',[
+                'user_id' => $userId,
+                'order_id' => $order->id,
+                'status' => $order->status,
+            ]);
             return response()->json([
                 'message' => 'تم إلغاء الطلب وإعادة الكميات للمخزون بنجاح.',
                 'data'    => $order->fresh(['products']),

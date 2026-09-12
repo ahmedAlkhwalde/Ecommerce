@@ -21,13 +21,13 @@ class ProductController extends Controller
     public function index()
     {
         try {
-            $products = Product::with('category')->get();
+            $products = Product::with('category')->paginate(10);
             $products->transform(function ($product) {
                 $product->image = $product->image ? asset($product->image) : null;
                 return $product;
             });
             return response()->json([
-                'message' => 'تم جلب جميع المنتجات بنجاح.',
+                'message' => 'تم جلب المنتجات بنجاح.',
                 'data'    => $products,
             ], 200);
         } catch (Exception $e) {
@@ -81,7 +81,9 @@ class ProductController extends Controller
                 ], 404);
             }
 
-            $products = $category->products->load('category')->map(function ($product) {
+            $products = $category->products()->with('category')->paginate(10);
+
+            $products->getCollection()->transform(function ($product) {
                 $product->image = $product->image ? asset($product->image) : null;
                 return $product;
             });
