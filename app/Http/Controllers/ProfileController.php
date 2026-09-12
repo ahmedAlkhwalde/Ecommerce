@@ -4,12 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\UpdateProfileRequest;
 use App\Models\Profile;
+use App\Traits\UploadImageTrait;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class ProfileController extends Controller
 {
+    use UploadImageTrait;
     public function index()
     {
         $user = Auth::user();
@@ -33,10 +35,10 @@ class ProfileController extends Controller
             $valedatedata = $request->validated();
             $valedatedata['user_id'] = $user_id;
             if ($request->hasFile('avatar')) {
-                $image = $request->file('avatar');
-                $imageName = time() . '_' . $image->getClientOriginalName();
-                $image->move(public_path('images'), $imageName);
-                $valedatedata['avatar'] = 'images/' . $imageName;
+                $imagepath = $this->uploadImage($request, 'avatar', 'images');
+                if ($imagepath) {
+                    $valedatedata['avatar'] = $imagepath;
+                }
             }
             $profile = Profile::updateOrCreate(['user_id' => $user_id], $valedatedata);
             if (!$profile) {

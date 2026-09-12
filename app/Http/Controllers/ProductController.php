@@ -6,6 +6,7 @@ use App\Http\Requests\StoreProductRequest;
 use App\Http\Requests\UpdateProductRequest;
 use App\Models\Category;
 use App\Models\Product;
+use App\Traits\UploadImageTrait;
 use Exception;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\File;
@@ -13,6 +14,7 @@ use Illuminate\Http\Request;
 
 class ProductController extends Controller
 {
+    use UploadImageTrait;
     /**
      * Display a listing of the resource.
      */
@@ -43,11 +45,9 @@ class ProductController extends Controller
     {
         try {
             $valedateData = $request->validated();
-            if ($request->hasFile('image')) {
-                $image = $request->file('image');
-                $imageName = time() . '_' . $image->getClientOriginalName();
-                $image->move(public_path('images'), $imageName);
-                $valedateData['image'] = 'images/' . $imageName;
+            $imagepath = $this->uploadImage($request, 'image', 'images');
+            if ($imagepath) {
+                $valedateData['image'] = $imagepath;
             }
             $product = Product::create($valedateData);
             if (!$product) {
@@ -108,7 +108,7 @@ class ProductController extends Controller
     /**
      * Update the specified resource in storage.
      */
-   
+
 
     public function update(UpdateProductRequest $request, string $id)
     {
@@ -117,14 +117,10 @@ class ProductController extends Controller
             $product = Product::findOrFail($id);
 
             if ($request->hasFile('image')) {
-                if ($product->image && File::exists(public_path($product->image))) {
-                    File::delete(public_path($product->image));
+                $imagepath = $this->uploadImage($request, 'image', 'images');
+                if ($imagepath) {
+                    $validatedData['image'] = $imagepath;
                 }
-
-                $image = $request->file('image');
-                $imageName = time() . '_' . $image->getClientOriginalName();
-                $image->move(public_path('images'), $imageName);
-                $validatedData['image'] = 'images/' . $imageName;
             }
 
             $product->update($validatedData);
