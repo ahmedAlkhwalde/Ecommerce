@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\API\NotificationController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\OrderController;
@@ -36,6 +37,12 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'CheckAdmin'])->group(functi
     Route::post('/orders/{id}/edit-status', [OrderController::class, 'editStatus']);
 
 
+});
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
 });
 
 

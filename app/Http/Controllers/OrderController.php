@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Order;
+use App\Traits\HasDynamicNotification;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -11,6 +12,7 @@ use Illuminate\Support\Facades\Log;
 
 class OrderController extends Controller
 {
+    use HasDynamicNotification;
     public function index(Request $request)
     {
         try {
@@ -144,6 +146,12 @@ class OrderController extends Controller
 
                     $product->decrement('stock', $quantity);
                 }
+                $this->sendNotification(
+                    $user,
+                    'طلب جديد',
+                    "تمت إضافة طلب جديد برقم: {$order->id} بمبلغ إجمالي: {$totalPrice}",
+                    'order_created',
+                );
 
                 $cart->products()->detach();
                 Log::info('تم إنشاء الطلب بنجاح', [
@@ -200,8 +208,15 @@ class OrderController extends Controller
                 $order->status = 'cancelled';
                 $order->save();
             });
+            $this->sendNotification(
+                Auth::user(),
+                'طلب جديد!',
+                'تم إلغاء الطلب وإعادة الكميات للمخزون بنجاح.',
+                'order_cancelled',
+                ['order_id' => $order->id]
+            );
 
-            Log::info('تم إلغاء الطلب وإعادة الكميات للمخزون بنجاح.',[
+            Log::info('تم إلغاء الطلب وإعادة الكميات للمخزون بنجاح.', [
                 'user_id' => $userId,
                 'order_id' => $order->id,
                 'status' => $order->status,
