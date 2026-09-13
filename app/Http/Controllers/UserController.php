@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\ResendOtp;
+use App\Events\UserRegister;
 use App\Http\Requests\loginRequest;
 use App\Http\Requests\UserRequest;
 use App\Http\Requests\VerifyOtpRequest;
@@ -95,9 +97,7 @@ class UserController extends Controller
         if (!$user) {
             return response()->json(['error' => 'User not created'], 422);
         }
-        $code = rand(100000, 999999);
-        Cache::put('verification_code_' . $user->email, $code, now()->addMinutes(10));
-        Mail::to($user->email)->send(new maileVerified($user->name, $code));
+        UserRegister::dispatch($user);
         return response()->json([
             'message' => 'تم إنشاء الحساب بنجاح، تم إرسال رمز التحقق إلى بريدك الإلكتروني.',
             'user'    => $user,
@@ -149,10 +149,7 @@ class UserController extends Controller
                 'message' => 'هذا الحساب مفعل مسبقاً، يمكنك تسجيل الدخول مباشرة.'
             ], 400);
         }
-        Cache::forget('verification_code_' . $user->email);
-        $newCode = rand(100000, 999999);
-        Cache::put('verification_code_' . $user->email, $newCode, now()->addMinutes(10));
-        Mail::to($user->email)->send(new maileVerified($user->name, $newCode));
+        ResendOtp::dispatch($user);
         return response()->json([
             'message' => 'تم إعادة إرسال رمز تحقق جديد إلى بريدك الإلكتروني.'
         ], 200);
