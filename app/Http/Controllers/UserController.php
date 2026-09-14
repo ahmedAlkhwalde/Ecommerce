@@ -7,6 +7,8 @@ use App\Events\UserRegister;
 use App\Http\Requests\loginRequest;
 use App\Http\Requests\UserRequest;
 use App\Http\Requests\VerifyOtpRequest;
+use App\Jobs\ResendEmailQueue;
+use App\Jobs\SendWelcomeEmailJob;
 use App\Mail\maileVerified;
 use App\Mail\mailPasswordReset;
 use App\Models\User;
@@ -97,7 +99,7 @@ class UserController extends Controller
         if (!$user) {
             return response()->json(['error' => 'User not created'], 422);
         }
-        UserRegister::dispatch($user);
+        SendWelcomeEmailJob::dispatch($user);
         return response()->json([
             'message' => 'تم إنشاء الحساب بنجاح، تم إرسال رمز التحقق إلى بريدك الإلكتروني.',
             'user'    => $user,
@@ -149,7 +151,7 @@ class UserController extends Controller
                 'message' => 'هذا الحساب مفعل مسبقاً، يمكنك تسجيل الدخول مباشرة.'
             ], 400);
         }
-        ResendOtp::dispatch($user);
+        ResendEmailQueue::dispatch($user);
         return response()->json([
             'message' => 'تم إعادة إرسال رمز تحقق جديد إلى بريدك الإلكتروني.'
         ], 200);

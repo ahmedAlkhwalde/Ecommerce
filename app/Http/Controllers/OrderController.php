@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\NotificationAndLogJob;
 use App\Models\Order;
 use App\Traits\HasDynamicNotification;
 use Exception;
@@ -146,11 +147,12 @@ class OrderController extends Controller
 
                     $product->decrement('stock', $quantity);
                 }
-                $this->sendNotification(
+                NotificationAndLogJob::dispatch(
                     $user,
-                    'طلب جديد',
-                    "تمت إضافة طلب جديد برقم: {$order->id} بمبلغ إجمالي: {$totalPrice}",
-                    'order_created',
+                    'طلب جديد!',
+                    'تم إنشاء طلب جديد بنجاح.',
+                    'new_order',
+                    ['order_id' => $order->id]
                 );
 
                 $cart->products()->detach();
@@ -208,6 +210,7 @@ class OrderController extends Controller
                 $order->status = 'cancelled';
                 $order->save();
             });
+            
             $this->sendNotification(
                 Auth::user(),
                 'طلب جديد!',
