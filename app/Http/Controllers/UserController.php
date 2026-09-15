@@ -16,9 +16,49 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Mail;
+use Laravel\Socialite\Facades\Socialite;
 
 class UserController extends Controller
 {
+
+    public function handleGoogleCallback(Request $request)
+    {
+        $request->validate([
+            'token' => 'required|string',
+        ]);
+
+        try {
+            $googleUser = Socialite::driver('google')->userFromToken($request->token);
+
+            $user = User::firstOrCreate(
+                ['email' => $googleUser->getEmail()],
+                [
+                    'name'          => $googleUser->getName(),
+                    'provider_id'   => $googleUser->getId(),
+                    'provider_name' => 'google',
+                    'role_id'       => 2,
+                    'verified'      => 1,
+                    'password'      => null,
+                ]
+            );
+
+            
+
+            $token = $user->createToken('auth_token')->plainTextToken;
+
+            return response()->json([
+                'message'      => 'تم تسجيل الدخول بنجاح عبر غوغل.',
+                'access_token' => $token,
+                'token_type'   => 'Bearer',
+                'user'         => $user,
+            ], 200);
+        } catch (Exception $e) {
+            return response()->json([
+                'message' => 'فشل التحقق من حساب غوغل.',
+                'error'   => $e->getMessage(),
+            ], 401);
+        }
+    }
 
     public function getusers()
     {
@@ -173,7 +213,7 @@ class UserController extends Controller
             return response()->json(['error' => 'حسابك غير مفعل، يرجى التحقق من بريدك الإلكتروني.'], 403);
         }
 
-        if($user->is_banned) {
+        if ($user->is_banned) {
             return response()->json(['error' => 'تم حظر حسابك. يرجى التواصل مع الإدارة.'], 403);
         }
 
@@ -186,7 +226,8 @@ class UserController extends Controller
         ]);
     }
 
-    public function forgetpassword(Request $request) {
+    public function forgetpassword(Request $request)
+    {
         $request->validate([
             'email' => 'required|email|exists:users,email',
         ]);
@@ -203,7 +244,8 @@ class UserController extends Controller
     }
 
 
-    public function resetpassword(Request $request) {
+    public function resetpassword(Request $request)
+    {
         $request->validate([
             'email' => 'required|email|exists:users,email',
             'code' => 'required|digits:6',

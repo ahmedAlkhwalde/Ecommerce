@@ -18,6 +18,8 @@ Route::post('/register', [UserController::class, 'register']);
 Route::post('/verify-otp', [UserController::class, 'verifyOtp']);
 Route::post('/resend-otp', [UserController::class, 'resendOtp'])->middleware('throttle:otp');
 Route::post('/login', [UserController::class, 'login'])->middleware('throttle:login');
+Route::post('/auth/google/callback', [UserController::class, 'handleGoogleCallback'])
+    ->middleware('throttle:login');
 Route::post('/forgetpassword', [UserController::class, 'forgetpassword']);
 Route::post('/resetpassword', [UserController::class, 'resetpassword']);
 Route::post('/logout', [UserController::class, 'logout'])->middleware('auth:sanctum');
@@ -70,7 +72,7 @@ Route::prefix('user')->middleware(['auth:sanctum', 'CheckUser','throttle:otp'])-
 
 
 
-Route::prefix(['user','throttle:otp'])->group(function () {
+Route::prefix('user')->middleware('throttle:otp')->group(function () {
     Route::get('/category', [CategoryController::class, 'index']);
     Route::get('/products', [ProductController::class, 'index']);
     Route::get('/products/{id}', [ProductController::class, 'show']);
