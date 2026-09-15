@@ -26,10 +26,12 @@ Route::post('/logout', [UserController::class, 'logout'])->middleware('auth:sanc
 
 
 
-Route::prefix('admin')->middleware(['auth:sanctum', 'CheckAdmin','throttle:otp'])->group(function () {
+Route::prefix('admin')->middleware(['auth:sanctum', 'CheckAdmin','throttle:api'])->group(function () {
     Route::apiResource('category',CategoryController::class);
 
     Route::apiResource('product',ProductController::class);
+    Route::get('/products/export', [ProductController::class, 'export']);
+    Route::post('/products/import', [ProductController::class, 'import']);
     
     Route::apiResource('profile',ProfileController::class);
 
@@ -43,7 +45,7 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'CheckAdmin','throttle:otp']
 
 });
 
-Route::middleware(['auth:sanctum','throttle:otp'])->group(function () {
+Route::middleware(['auth:sanctum','throttle:api'])->group(function () {
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
@@ -51,7 +53,7 @@ Route::middleware(['auth:sanctum','throttle:otp'])->group(function () {
 
 
 
-Route::prefix('user')->middleware(['auth:sanctum', 'CheckUser','throttle:otp'])->group(function () {
+Route::prefix('user')->middleware(['auth:sanctum', 'CheckUser','throttle:api'])->group(function () {
     
     Route::get('/profile', [ProfileController::class, 'index']);
     Route::post('/profile', [ProfileController::class, 'store']);
@@ -72,7 +74,7 @@ Route::prefix('user')->middleware(['auth:sanctum', 'CheckUser','throttle:otp'])-
 
 
 
-Route::prefix('user')->middleware('throttle:otp')->group(function () {
+Route::prefix('user')->middleware('throttle:api')->group(function () {
     Route::get('/category', [CategoryController::class, 'index']);
     Route::get('/products', [ProductController::class, 'index']);
     Route::get('/products/{id}', [ProductController::class, 'show']);

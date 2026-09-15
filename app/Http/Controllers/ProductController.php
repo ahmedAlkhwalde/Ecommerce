@@ -12,6 +12,10 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\File;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use App\Exports\ProductsExport;
+use Illuminate\Support\Facades\Storage;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Imports\ProductsImport;
 
 class ProductController extends Controller
 {
@@ -175,5 +179,43 @@ class ProductController extends Controller
                 'error' => $e->getMessage(),
             ]);
         }
+    }
+
+
+
+    public function export()
+    {
+        // التأكد من وجود المجلد
+        if (!Storage::disk('local')->exists('exports')) {
+            Storage::disk('local')->makeDirectory('exports');
+        }
+
+        $fileName = 'exports/products_' . time() . '.xlsx';
+
+        // استخدام store وتحديد disk local صراحةً
+        (new ProductsExport)->store($fileName, 'local');
+
+        return response()->json([
+            'message' => 'تم جلب الطلب وبدء إنشاء ملف الإكسل في الخلفية عبر الـ Queue.',
+            'file_name' => $fileName,
+        ], 202);
+    }
+
+
+
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls,csv|max:10240',
+        ]);
+
+        // حفظ الملف في local storage ليصل إليه الـ Worker بأمان
+        $path = $request->file('file')->store('imports', 'local');
+
+        Excel::import(new ProductsImport, $path, 'local');
+
+        return response()->json([
+            'message' => 'بدأت عملية الاستيراد في الـ Queue بنجاح.',
+        ], 202);
     }
 }
