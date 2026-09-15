@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Category;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class CategoryController extends Controller
 {
@@ -14,8 +15,10 @@ class CategoryController extends Controller
     public function index()
     {
         try {
-            $Category = Category::all();
-            if (!$Category) {
+            $Category = Cache::remember('categories_all', now()->addDay(), function () {
+                return Category::all();
+            });
+            if ($Category->isEmpty()) {
                 return response()->json([
                     'message' => 'لا توجد تصنيفات متاحة حالياً.',
                 ], 404);
