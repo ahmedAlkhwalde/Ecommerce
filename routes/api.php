@@ -16,13 +16,15 @@ Route::get('/user', function (Request $request) {
 
 Route::post('/register', [UserController::class, 'register']);
 Route::post('/verify-otp', [UserController::class, 'verifyOtp']);
-Route::post('/resend-otp', [UserController::class, 'resendOtp']);
-Route::post('/login', [UserController::class, 'login']);
+Route::post('/resend-otp', [UserController::class, 'resendOtp'])->middleware('throttle:otp');
+Route::post('/login', [UserController::class, 'login'])->middleware('throttle:login');
 Route::post('/forgetpassword', [UserController::class, 'forgetpassword']);
 Route::post('/resetpassword', [UserController::class, 'resetpassword']);
 Route::post('/logout', [UserController::class, 'logout'])->middleware('auth:sanctum');
 
-Route::prefix('admin')->middleware(['auth:sanctum', 'CheckAdmin'])->group(function () {
+
+
+Route::prefix('admin')->middleware(['auth:sanctum', 'CheckAdmin','throttle:otp'])->group(function () {
     Route::apiResource('category',CategoryController::class);
 
     Route::apiResource('product',ProductController::class);
@@ -39,7 +41,7 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'CheckAdmin'])->group(functi
 
 });
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum','throttle:otp'])->group(function () {
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
@@ -47,7 +49,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
 
 
-Route::prefix('user')->middleware(['auth:sanctum', 'CheckUser'])->group(function () {
+Route::prefix('user')->middleware(['auth:sanctum', 'CheckUser','throttle:otp'])->group(function () {
     
     Route::get('/profile', [ProfileController::class, 'index']);
     Route::post('/profile', [ProfileController::class, 'store']);
@@ -68,9 +70,8 @@ Route::prefix('user')->middleware(['auth:sanctum', 'CheckUser'])->group(function
 
 
 
-Route::prefix('user')->group(function () {
+Route::prefix(['user','throttle:otp'])->group(function () {
     Route::get('/category', [CategoryController::class, 'index']);
-
     Route::get('/products', [ProductController::class, 'index']);
     Route::get('/products/{id}', [ProductController::class, 'show']);
 });
