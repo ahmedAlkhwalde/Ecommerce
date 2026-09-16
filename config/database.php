@@ -126,6 +126,10 @@ return [
             ],
         ],
 
+        'database' => [
+            'url' => env('FIREBASE_DATABASE_URL'),
+        ],
+
     ],
 
     /*

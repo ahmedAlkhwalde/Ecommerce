@@ -42,7 +42,7 @@ class UserController extends Controller
                 ]
             );
 
-            
+
 
             $token = $user->createToken('auth_token')->plainTextToken;
 
@@ -269,6 +269,24 @@ class UserController extends Controller
         return response()->json([
             'message' => 'تم إعادة تعيين كلمة المرور بنجاح! يمكنك الآن تسجيل الدخول بكلمة المرور الجديدة.'
         ], 200);
+    }
+
+
+
+    public function updateFcmToken(Request $request)
+    {
+        $request->validate([
+            'fcm_token' => 'required|string',
+        ]);
+
+        $request->user()->update([
+            'fcm_token' => $request->fcm_token,
+        ]);
+
+        return response()->json([
+            'status'  => 'success',
+            'message' => __('messages.fcm_token_updated'), // استخدام الترجمة المجهزة سابقاً
+        ]);
     }
 
 

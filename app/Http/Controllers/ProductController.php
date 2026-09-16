@@ -16,10 +16,16 @@ use App\Exports\ProductsExport;
 use Illuminate\Support\Facades\Storage;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\ProductsImport;
+use App\Jobs\SendsFcmNotificationsQueue;
+use App\Models\User;
+use App\Services\FirebaseService;
+use App\Traits\SendsFcmNotifications;
+use Illuminate\Support\Facades\Auth;
 
 class ProductController extends Controller
 {
     use UploadImageTrait;
+    use SendsFcmNotifications;
     /**
      * Display a listing of the resource.
      */
@@ -52,34 +58,44 @@ class ProductController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreProductRequest $request)
+    public function store(StoreProductRequest $request, FirebaseService $firebaseService)
     {
         try {
             $valedateData = $request->validated();
             $product = Product::create($valedateData);
+
             if (!$product) {
                 return response()->json([
                     'message' => 'حدث خطأ أثناء إنشاء المنتج.',
                 ], 500);
             }
+
             $imagePath = $this->uploadImage($request, $product, 'images', 'image', 'images/products');
+
+            $user = Auth::user();
+            SendsFcmNotificationsQueue::dispatch("منتج جديد","تم إضافة منتج بنجاح",$product,$user);
+
+
             return response()->json([
-                'message' => 'تم إنشاء المنتج بنجاح.',
-                'data'    => $product->load('images'),
+                'message'    => __('messages.product_created_successfully') ?? 'تم إنشاء المنتج بنجاح.',
+                'data'       => $product->load('images'),
                 'image_path' => $imagePath,
             ], 201);
+
         } catch (Exception $e) {
             Log::error('فشلت عملية إنشاء المنتج', [
-                'error'    => $e->getMessage(),
-                'file'     => $e->getFile(),
-                'line'     => $e->getLine(),
+                'error' => $e->getMessage(),
+                'file'  => $e->getFile(),
+                'line'  => $e->getLine(),
             ]);
+
             return response()->json([
                 'message' => 'حدث خطأ أثناء إنشاء المنتج.',
-                'error' => $e->getMessage(),
+                'error'   => $e->getMessage(),
             ], 500);
         }
     }
+
 
     /**
      * Display the specified resource.

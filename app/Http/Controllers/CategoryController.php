@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\SendsFcmNotificationsQueue;
 use App\Models\Category;
+use App\Models\User;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 
 class CategoryController extends Controller
@@ -53,6 +56,7 @@ class CategoryController extends Controller
                     'message' => 'حدث خطأ أثناء إنشاء التصنيف.',
                 ], 500);
             }
+            SendsFcmNotificationsQueue::dispatch("تصنيف جديد","تم إضافة تصنيف بنجاح",$Category,Auth::user());
             return response()->json([
                 'message' => 'تم إنشاء التصنيف بنجاح.',
                 'data'    => $Category,

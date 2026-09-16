@@ -58,6 +58,8 @@ Route::prefix('user')->middleware(['auth:sanctum', 'CheckUser','throttle:api'])-
     Route::get('/profile', [ProfileController::class, 'index']);
     Route::post('/profile', [ProfileController::class, 'store']);
 
+    Route::post('/fcm-token', [UserController::class, 'updateFcmToken']);
+
     
     Route::get('/cart', [CartController::class, 'index']);
     Route::post('/cart/add', [CartController::class, 'add']);
