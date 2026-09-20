@@ -1,43 +1,25 @@
 FROM php:8.2-fpm
 
-# 1. تثبيت حزم النظام السيرفر والـ MySQL
+# تثبيت الحزم المطلوبة للنظام وPHP
 RUN apt-get update && apt-get install -y \
-    nginx \
-    default-mysql-server \
-    supervisor \
-    libpng-dev \
-    libonig-dev \
-    libxml2-dev \
-    zip \
-    unzip \
-    git \
-    curl
+    git curl zip unzip libpng-dev libonig-dev \
+    libxml2-dev libzip-dev pkg-config zlib1g-dev \
+    && docker-php-ext-install pdo pdo_mysql mbstring zip exif pcntl bcmath gd
 
-# 2. تثبيت إضافات PHP المباشرة للـ MySQL
-RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
-
-# 3. تثبيت Composer
+# تحميل Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# 4. تحديد مجلد العمل ونسخ الملفات
 WORKDIR /var/www
-COPY . /var/www
 
-# 5. تثبيت حزم Composer للإنتاج
-RUN composer install --no-dev --optimize-autoloader
+COPY . .
 
-# 6. نسخ إعدادات Nginx و Supervisor
-COPY nginx.conf /etc/nginx/sites-available/default
-COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+# تثبيت الحزم
+RUN composer require predis/predis --ignore-platform-reqs
+RUN composer install --optimize-autoloader --no-scripts --no-interaction --ignore-platform-reqs
 
-# 7. إعطاء الصلاحيات المباشرة لمجلدات التخزين
+# ضبط الصلاحيات
 RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
 
-# 8. سكربت التشغيل المبدئي للـ Database والـ Migrations
-RUN service mysql start && \
-    mysql -e "CREATE DATABASE IF NOT EXISTS laravel_db;" && \
-    mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED BY 'root_password';"
+EXPOSE 8000
 
-EXPOSE 80
-
-CMD ["/usr/bin/supervisord"]
+CMD sh -c "php artisan migrate --force && php artisan queue:work --queue=firebase,schedule_updates,shift_swap,default --tries=3 --timeout=90 & exec php artisan serve --host=0.0.0.0 --port=8000"
