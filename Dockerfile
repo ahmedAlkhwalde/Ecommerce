@@ -3,8 +3,8 @@ FROM php:8.2-fpm
 # تثبيت الاعتمادات والحزم الأساسية
 RUN apt-get update && apt-get install -y \
     git curl zip unzip libpng-dev libonig-dev \
-    libxml2-dev libzip-dev pkg-config zlib1g-dev \
-    && docker-php-ext-install pdo pdo_mysql mbstring zip exif pcntl bcmath gd
+    libxml2-dev libzip-dev pkg-config zlib1g-dev libpq-dev \
+    && docker-php-ext-install pdo pdo_mysql pdo_pgsql mbstring zip exif pcntl bcmath gd
 
 # جلب Composer من الصورة الرسمية
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
