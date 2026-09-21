@@ -15,8 +15,7 @@ WORKDIR /var/www
 COPY composer.json composer.lock ./
 
 # تثبيت الحزم بدون تشغيل السكريبتات وبدون التعديل المباشر أثناء البناء
-RUN composer install --no-dev --optimize-autoloader --no-scripts --no-interaction --ignore-platform-reqs
-
+RUN composer install --optimize-autoloader --no-scripts --no-interaction --ignore-platform-reqs
 # نسخ باقي ملفات المشروع
 COPY . .
 
